@@ -1,0 +1,3 @@
+module NmiDirectPost
+  VERSION = "0.0.1"
+end
