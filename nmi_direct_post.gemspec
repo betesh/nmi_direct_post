@@ -7,10 +7,10 @@ Gem::Specification.new do |spec|
   spec.name          = "nmi_direct_post"
   spec.version       = NmiDirectPost::VERSION
   spec.authors       = ["Isaac Betesh"]
-  spec.email         = ["ibetesh@springbig.com"]
-  spec.description   = %q{TODO: Write a gem description}
-  spec.summary       = %q{TODO: Write a gem summary}
-  spec.homepage      = ""
+  spec.email         = ["iybetesh@gmail.com"]
+  spec.description   = %q{Gem that encapsulates the NMI Direct Post API in an ActiveRecord-like syntax}
+  spec.summary       = `cat README.md`
+  spec.homepage      = "https://github.com/betesh/nmi_direct_post"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files`.split($/)
@@ -20,4 +20,9 @@ Gem::Specification.new do |spec|
 
   spec.add_development_dependency "bundler", "~> 1.3"
   spec.add_development_dependency "rake"
+  spec.add_development_dependency "rspec"
+
+  spec.add_dependency 'addressable'
+  spec.add_dependency 'activemodel', '~> 4.0.0'
+  spec.add_dependency 'activesupport', '~> 4.0.0'
 end
