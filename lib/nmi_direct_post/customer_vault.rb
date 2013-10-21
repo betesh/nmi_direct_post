@@ -26,7 +26,7 @@ module NmiDirectPost
     public
     attr_reader :customer_vault_id, :customer_vault, :report_type
 
-    WHITELIST_ATTRIBUTES = [:id, :first_name, :last_name, :address_1, :address_2, :company, :city, :state, :postal_code, :country, :email, :phone, :fax, :cell_phone, :customertaxid, :website, :shipping_first_name, :shipping_last_name, :shipping_address_1, :shipping_address_2, :shipping_company, :shipping_city, :shipping_state, :shipping_postal_code, :shipping_country, :shipping_email, :shipping_carrier, :tracking_number, :shipping_date, :shipping, :cc_number, :cc_hash, :cc_exp, :cc_issue_number, :check_account, :check_hash, :check_aba, :check_name, :account_holder_type, :account_type, :sec_code, :processor_id, :cc_bin, :cc_start_date]
+    WHITELIST_ATTRIBUTES = [:id, :first_name, :last_name, :address_1, :address_2, :company, :city, :state, :postal_code, :country, :email, :phone, :fax, :cell_phone, :customertaxid, :website, :shipping_first_name, :shipping_last_name, :shipping_address_1, :shipping_address_2, :shipping_company, :shipping_city, :shipping_state, :shipping_postal_code, :shipping_country, :shipping_email, :shipping_carrier, :tracking_number, :shipping_date, :shipping, :cc_number, :cc_hash, :cc_exp, :cc_issue_number, :check_account, :check_hash, :check_aba, :check_name, :account_holder_type, :account_type, :sec_code, :processor_id, :cc_bin, :cc_start_date] + 20.times.collect { |i| :"merchant_defined_field_#{i+1}" }
     attr_accessor_with_tracking_of_changes *WHITELIST_ATTRIBUTES
 
     validate :billing_information_present?, :if => Proc.new { |record| :add_customer == record.customer_vault }
@@ -64,7 +64,7 @@ module NmiDirectPost
     def save!
       post_action(:update)
       reload
-      true
+      self.success
     end
 
     def destroy
@@ -154,13 +154,23 @@ module NmiDirectPost
 
       def set_attributes(attributes)
         @attributes_to_update = []
+        merchant_defined_fields = []
         WHITELIST_ATTRIBUTES.each do |a|
           val = (attributes.delete(a.to_s) { NIL })
           val = (attributes.delete(a) { NIL }) if NIL == val
+          merchant_defined_field_index = a.to_s.split('merchant_defined_field_')[1]
+          if (!merchant_defined_field_index.nil? && NIL == val && attributes.key?('merchant_defined_field'))
+            val = attributes['merchant_defined_field'][merchant_defined_field_index.to_i - 1] || NIL
+            merchant_defined_fields << (merchant_defined_field_index.to_i - 1) unless NIL == val
+          end
           unless NIL == val
             self.__send__("#{a}=", val)
             @attributes_to_update << a
           end
+        end
+        merchant_defined_fields.each do |i|
+          attributes['merchant_defined_field'][i] = nil
+          attributes.delete('merchant_defined_field') if [nil] == attributes['merchant_defined_field'].uniq
         end
         @id = @id.to_i if @id
         raise MassAssignmentSecurity::Error, "Cannot mass-assign the following attributes: #{attributes.keys.join(", ")}" unless attributes.empty?

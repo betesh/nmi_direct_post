@@ -97,6 +97,18 @@ describe NmiDirectPost::CustomerVault do
   end
 
   describe "update" do
+    it "should update the customer vault with new merchant_defined_fields" do
+      new_field_1 = Random.rand(1..1000)
+      new_field_2 = Random.rand(1..1000)
+      @customer = CV.find_by_customer_vault_id(known_customer_vault_id)
+      @customer.update!(:merchant_defined_field_1 => new_field_1, :merchant_defined_field_2 => new_field_2)
+      @customer.response_text.should eq("Customer Update Successful")
+      @customer.success.should be_true
+      @customer.reload
+      @customer.merchant_defined_field_1.should eq(new_field_1.to_s)
+      @customer.merchant_defined_field_2.should eq(new_field_2.to_s)
+    end
+
     it "should update the customer vault with new shipping_email when shipping_email is passed to update!" do
       new_email = get_new_email
       @customer = CV.find_by_customer_vault_id(known_customer_vault_id)
