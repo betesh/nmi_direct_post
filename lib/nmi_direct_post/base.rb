@@ -1,4 +1,4 @@
-#require 'net/https'
+require 'net/https'
 require 'openssl'
 
 require 'active_support/concern'
