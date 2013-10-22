@@ -40,16 +40,17 @@ module NmiDirectPost
     end
 
     class << self
+      NO_CONNECTION = "Please set a username by calling NmiDirectPost::Base.establish_connection(ENV['NMI_USERNAME'], ENV['NMI_PASSWORD'])"
       def establish_connection(username, password)
         @username, @password = username, password
       end
 
       def username
-        @username || Base.username
+        (@username || Base.username).tap { |_| raise StandardError, NO_CONNECTION if _.blank? }
       end
 
       def password
-        @password || Base.password
+        (@password || Base.password).tap { |_| raise StandardError, NO_CONNECTION if _.blank? }
       end
 
       def generate_query_string(attributes, target = self)
