@@ -24,9 +24,11 @@ module NmiDirectPost
         end
       end
     public
+    READ_ONLY_ATTRIBUTES = [:check_hash, :cc_hash]
+    attr_reader *READ_ONLY_ATTRIBUTES
     attr_reader :customer_vault_id, :customer_vault, :report_type
 
-    WHITELIST_ATTRIBUTES = [:id, :first_name, :last_name, :address_1, :address_2, :company, :city, :state, :postal_code, :country, :email, :phone, :fax, :cell_phone, :customertaxid, :website, :shipping_first_name, :shipping_last_name, :shipping_address_1, :shipping_address_2, :shipping_company, :shipping_city, :shipping_state, :shipping_postal_code, :shipping_country, :shipping_email, :shipping_carrier, :tracking_number, :shipping_date, :shipping, :cc_number, :cc_hash, :cc_exp, :cc_issue_number, :check_account, :check_hash, :check_aba, :check_name, :account_holder_type, :account_type, :sec_code, :processor_id, :cc_bin, :cc_start_date] + 20.times.collect { |i| :"merchant_defined_field_#{i+1}" }
+    WHITELIST_ATTRIBUTES = [:id, :first_name, :last_name, :address_1, :address_2, :company, :city, :state, :postal_code, :country, :email, :phone, :fax, :cell_phone, :customertaxid, :website, :shipping_first_name, :shipping_last_name, :shipping_address_1, :shipping_address_2, :shipping_company, :shipping_city, :shipping_state, :shipping_postal_code, :shipping_country, :shipping_email, :shipping_carrier, :tracking_number, :shipping_date, :shipping, :cc_number, :cc_exp, :cc_issue_number, :check_account, :check_aba, :check_name, :account_holder_type, :account_type, :sec_code, :processor_id, :cc_bin, :cc_start_date] + 20.times.collect { |i| :"merchant_defined_field_#{i+1}" }
     attr_accessor_with_tracking_of_changes *WHITELIST_ATTRIBUTES
 
     validate :billing_information_present?, :if => Proc.new { |record| :add_customer == record.customer_vault }
@@ -83,13 +85,26 @@ module NmiDirectPost
         puts "Loading NMI customer vault from customer_vault_id(#{customer_vault_id}) using query: #{safe_params}"
         response = self.class.get(self.class.all_params(safe_params))["customer_vault"]
         raise CustomerVaultNotFoundError, "No record found for customer vault ID #{self.customer_vault_id}" if response.nil?
-        set_attributes(response["customer"].tap { |_| _.delete("customer_vault_id")})
+        attributes = response["customer"]
+        READ_ONLY_ATTRIBUTES.each do |a|
+          val = (attributes.delete(a.to_s) { NIL })
+          instance_variable_set("@#{a}",val) unless NIL == val
+        end
+        set_attributes(attributes.tap { |_| _.delete("customer_vault_id") })
       ensure
         @report_type = nil
         @attributes_to_update = nil
         @attributes_to_save = nil
       end
       self
+    end
+
+    def credit_card?
+      !@cc_hash.blank?
+    end
+
+    def checking?
+      !@check_hash.blank?
     end
 
     class << self

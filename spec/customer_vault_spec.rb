@@ -8,6 +8,8 @@ describe NmiDirectPost::CustomerVault do
   CV = NmiDirectPost::CustomerVault
   let(:a_cc_customer_vault_id) { TestCredentials::INSTANCE.cc_customer }
   let(:a_cc_customer) { CV.find_by_customer_vault_id(a_cc_customer_vault_id) }
+  let(:a_checking_account_customer_vault_id) { TestCredentials::INSTANCE.ach_customer }
+  let(:a_checking_account_customer) { CV.find_by_customer_vault_id(a_checking_account_customer_vault_id) }
 
   before :all do
     credentials = TestCredentials::INSTANCE
@@ -182,6 +184,60 @@ describe NmiDirectPost::CustomerVault do
         customer.should be_a(CV)
         customer.customer_vault_id.should_not be_nil
       end
+    end
+  end
+
+  describe "cc_hash" do
+    it "should not be settable" do
+      a_cc_customer.respond_to?('cc_hash=').should be_false
+    end
+    it "should be a string on a CC customer" do
+      a_cc_customer.cc_hash.should be_a(String)
+    end
+    it "should be nil on a checking customer" do
+      a_checking_account_customer.cc_hash.should be_nil
+    end
+    it "should not be allowed in a mass assignment update" do
+      expect{a_cc_customer.update!(:cc_hash => 'abcdefg')}.to raise_error(NmiDirectPost::MassAssignmentSecurity::Error, 'Cannot mass-assign the following attributes: cc_hash')
+    end
+    it "should not be allowed when initialized" do
+      expect{CV.new(:first_name => "George", :last_name => "Washington", :cc_number => "4111111111111111", :cc_exp => "06/16", :cc_hash => 'abcdefg')}.to raise_error(NmiDirectPost::MassAssignmentSecurity::Error, 'Cannot mass-assign the following attributes: cc_hash')
+    end
+  end
+
+  describe "check_hash" do
+    it "should not be settable" do
+      a_cc_customer.respond_to?('check_hash=').should be_false
+    end
+    it "should be a string on a CC customer" do
+      a_checking_account_customer.check_hash.should be_a(String)
+    end
+    it "should be nil on a checking customer" do
+      a_cc_customer.check_hash.should be_nil
+    end
+    it "should not be allowed in a mass assignment update" do
+      expect{a_cc_customer.update!(:check_hash => 'abcdefg')}.to raise_error(NmiDirectPost::MassAssignmentSecurity::Error, 'Cannot mass-assign the following attributes: check_hash')
+    end
+    it "should not be allowed when initialized" do
+      expect{CV.new(:first_name => "George", :last_name => "Washington", :cc_number => "4111111111111111", :cc_exp => "06/16", :check_hash => 'abcdefg')}.to raise_error(NmiDirectPost::MassAssignmentSecurity::Error, 'Cannot mass-assign the following attributes: check_hash')
+    end
+  end
+
+  describe "checking?" do
+    it "should be true for a checking account customer" do
+      a_checking_account_customer.checking?.should be_true
+    end
+    it "should be false for a CC customer" do
+      a_cc_customer.checking?.should be_false
+    end
+  end
+
+  describe "credit_card?" do
+    it "should be true for a CC customer" do
+      a_cc_customer.credit_card?.should be_true
+    end
+    it "should be false for a checking account customer" do
+      a_checking_account_customer.credit_card?.should be_false
     end
   end
 end
