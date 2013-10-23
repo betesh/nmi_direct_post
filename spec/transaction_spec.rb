@@ -1,4 +1,5 @@
 require_relative 'spec_helper'
+require 'rspec/rails/extensions/active_record/base'
 
 describe NmiDirectPost::Transaction do
   let(:a_cc_customer_vault_id) { TestCredentials::INSTANCE.cc_customer }
@@ -6,7 +7,7 @@ describe NmiDirectPost::Transaction do
 
   before :all do
     credentials = TestCredentials::INSTANCE
-    NmiDirectPost::Transaction.establish_connection(credentials.nmi_username, credentials.nmi_password)
+    NmiDirectPost::Base.establish_connection(credentials.nmi_username, credentials.nmi_password)
     @amount_generator = Random.new
   end
 
@@ -49,10 +50,10 @@ describe NmiDirectPost::Transaction do
   end
 
   it "should respond with a decline code when given an invalid customer_vault_id" do
-    given_a_sale_for_customer_vault_id 1000
-    expect_response_to_be 3, 300
-    @transaction.response_text.include?("Invalid Customer Vault ID specified").should be_true, @transaction.inspect
-    @transaction.success.should be_false, @transaction.inspect
+    @transaction = NmiDirectPost::Transaction.new(:customer_vault_id => 1000, :amount => amount.call)
+    @transaction.save.should be_false
+    @transaction.should have(1).errors_on(:customer_vault)
+    @transaction.errors_on(:customer_vault).should include("Customer vault with the given customer_vault could not be found")
   end
 
   it "should find a sale" do
@@ -82,4 +83,15 @@ describe NmiDirectPost::Transaction do
     NmiDirectPost::Transaction.find_by_transaction_id(12345).should be_nil
   end
 
+  describe "customer_vault" do
+    it "should find when it exists" do
+      @transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => amount.call)
+      @transaction.customer_vault.should have_same_attributes_as(NmiDirectPost::CustomerVault.find_by_customer_vault_id(a_cc_customer_vault_id))
+    end
+
+    it "should be nil when it doesn't exist" do
+      @transaction = NmiDirectPost::Transaction.new(:customer_vault_id => '123456', :amount => amount.call)
+      @transaction.customer_vault.should be_nil
+    end
+  end
 end

@@ -9,10 +9,11 @@ module NmiDirectPost
     SAFE_PARAMS = [:customer_vault_id, :type, :amount]
 
     attr_reader *SAFE_PARAMS
-    attr_reader :auth_code, :avs_response, :cvv_response, :order_id, :type, :dup_seconds
+    attr_reader :auth_code, :avs_response, :cvv_response, :order_id, :type, :dup_seconds, :customer_vault
     attr_reader :transaction_id
 
-    validates_presence_of :customer_vault_id, :amount, :if => Proc.new { |transaction| transaction.transaction_id.nil? }
+    validates_presence_of :customer_vault_id, :amount, :if => Proc.new { |_| _.transaction_id.nil? }, :message => "%{attribute} cannot be blank"
+    validates_presence_of :customer_vault, :if => Proc.new { |_| _.transaction_id.nil? && !_.customer_vault_id.blank? }, :message => "%{attribute} with the given customer_vault could not be found"
     validates_inclusion_of :type, :in => ["sale", "authorization", "capture", "void", "refund", "credit", "validate", "update", ""]
 
     def initialize(attributes)
@@ -20,6 +21,7 @@ module NmiDirectPost
       @type, @amount = attributes[:type].to_s, attributes[:amount].to_f
       @transaction_id = attributes[:transaction_id].to_i if attributes[:transaction_id]
       @customer_vault_id = attributes[:customer_vault_id].to_i if attributes[:customer_vault_id]
+      @customer_vault = CustomerVault.find_by_customer_vault_id(@customer_vault_id) unless @customer_vault_id.blank?
       get(transaction_params) if (!@transaction_id.blank? && self.valid?)
     end
 

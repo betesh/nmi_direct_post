@@ -1,14 +1,5 @@
 require_relative 'spec_helper'
 
-RSpec::Matchers.define :have_same_attributes_as do |expected|
-  match do |actual|
-    actual.customer_vault_id == expected.customer_vault_id && [true] == (NmiDirectPost::CustomerVault::WHITELIST_ATTRIBUTES.collect { |a| actual.__send__(a) == expected.__send__(a) }).uniq
-  end
-  description do
-    "'#{expected.inspect}'"
-  end
-end
-
 describe NmiDirectPost::CustomerVault do
   def get_new_email
     "someone#{Random.rand(1..1000)}@example.com"
