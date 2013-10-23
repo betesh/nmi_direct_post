@@ -15,7 +15,8 @@ describe NmiDirectPost::CustomerVault do
   end
 
   CV = NmiDirectPost::CustomerVault
-  let(:known_customer_vault_id) { TestCredentials::INSTANCE.known_customer_vault_id }
+  let(:a_cc_customer_vault_id) { TestCredentials::INSTANCE.cc_customer }
+  let(:a_cc_customer) { CV.find_by_customer_vault_id(a_cc_customer_vault_id) }
 
   before :all do
     credentials = TestCredentials::INSTANCE
@@ -24,11 +25,10 @@ describe NmiDirectPost::CustomerVault do
 
   describe "find_by_customer_vault_id" do
     it "should find a customer vault" do
-      @customer = CV.find_by_customer_vault_id(known_customer_vault_id)
-      @customer.customer_vault_id.should eq(known_customer_vault_id)
-      @customer.first_name.should_not be_nil
-      @customer.last_name.should_not be_nil
-      @customer.email.should_not be_nil
+      a_cc_customer.customer_vault_id.should eq(a_cc_customer_vault_id)
+      a_cc_customer.first_name.should_not be_nil
+      a_cc_customer.last_name.should_not be_nil
+      a_cc_customer.email.should_not be_nil
     end
 
     it "should raise exception when customer_vault_id is blank" do
@@ -50,7 +50,7 @@ describe NmiDirectPost::CustomerVault do
 
     it "should not create a customer vault when a customer valut id is already present" do
       new_email = get_new_email
-      @customer = CV.new(:first_name => "George", :last_name => "Washington", :cc_number => "4111111111111111", :cc_exp => "06/16", :customer_vault_id => known_customer_vault_id)
+      @customer = CV.new(:first_name => "George", :last_name => "Washington", :cc_number => "4111111111111111", :cc_exp => "06/16", :customer_vault_id => a_cc_customer_vault_id)
       @customer.create.should be_false
       @customer.errors.full_messages.should eq(["Customer vault You cannot specify a Customer vault ID when creating a new customer vault.  NMI will assign one upon creating the record"])
     end
@@ -86,13 +86,12 @@ describe NmiDirectPost::CustomerVault do
   describe "save" do
     it "should update the customer vault with new shipping_email when shipping_email is set before calling save!" do
       new_email = get_new_email
-      @customer = CV.find_by_customer_vault_id(known_customer_vault_id)
-      @customer.shipping_email = new_email
-      @customer.save!
-      @customer.response_text.should eq("Customer Update Successful")
-      @customer.success.should be_true
-      @customer.shipping_email.should eq(new_email)
-      @customer.reload.shipping_email.should eq(new_email)
+      a_cc_customer.shipping_email = new_email
+      a_cc_customer.save!
+      a_cc_customer.response_text.should eq("Customer Update Successful")
+      a_cc_customer.success.should be_true
+      a_cc_customer.shipping_email.should eq(new_email)
+      a_cc_customer.reload.shipping_email.should eq(new_email)
     end
   end
 
@@ -100,56 +99,51 @@ describe NmiDirectPost::CustomerVault do
     it "should update the customer vault with new merchant_defined_fields" do
       new_field_1 = Random.rand(1..1000)
       new_field_2 = Random.rand(1..1000)
-      @customer = CV.find_by_customer_vault_id(known_customer_vault_id)
-      @customer.update!(:merchant_defined_field_1 => new_field_1, :merchant_defined_field_2 => new_field_2)
-      @customer.response_text.should eq("Customer Update Successful")
-      @customer.success.should be_true
-      @customer.reload
-      @customer.merchant_defined_field_1.should eq(new_field_1.to_s)
-      @customer.merchant_defined_field_2.should eq(new_field_2.to_s)
+      a_cc_customer.update!(:merchant_defined_field_1 => new_field_1, :merchant_defined_field_2 => new_field_2)
+      a_cc_customer.response_text.should eq("Customer Update Successful")
+      a_cc_customer.success.should be_true
+      a_cc_customer.reload
+      a_cc_customer.merchant_defined_field_1.should eq(new_field_1.to_s)
+      a_cc_customer.merchant_defined_field_2.should eq(new_field_2.to_s)
     end
 
     it "should update the customer vault with new shipping_email when shipping_email is passed to update!" do
       new_email = get_new_email
-      @customer = CV.find_by_customer_vault_id(known_customer_vault_id)
-      @customer.update!(:shipping_email => new_email)
-      @customer.response_text.should eq("Customer Update Successful")
-      @customer.success.should be_true
-      @customer.shipping_email.should eq(new_email)
-      @customer.reload.shipping_email.should eq(new_email)
+      a_cc_customer.update!(:shipping_email => new_email)
+      a_cc_customer.response_text.should eq("Customer Update Successful")
+      a_cc_customer.success.should be_true
+      a_cc_customer.shipping_email.should eq(new_email)
+      a_cc_customer.reload.shipping_email.should eq(new_email)
     end
 
     it "should not update the customer vault with new shipping_email when shipping_email is set before calling update!" do
       new_email = get_new_email
       new_address = "#{Random.rand(1..1000)} Sesame Street"
-      @customer = CV.find_by_customer_vault_id(known_customer_vault_id)
-      old_email = @customer.shipping_email
-      @customer.shipping_email = new_email
-      @customer.update!(:shipping_address_1 => new_address)
-      @customer.response_text.should eq("Customer Update Successful")
-      @customer.success.should be_true
-      @customer.shipping_email.should eq(new_email)
-      @customer.reload.shipping_email.should eq(old_email)
+      old_email = a_cc_customer.shipping_email
+      a_cc_customer.shipping_email = new_email
+      a_cc_customer.update!(:shipping_address_1 => new_address)
+      a_cc_customer.response_text.should eq("Customer Update Successful")
+      a_cc_customer.success.should be_true
+      a_cc_customer.shipping_email.should eq(new_email)
+      a_cc_customer.reload.shipping_email.should eq(old_email)
     end
 
     it "should not allow updating the customer_vault_id" do
       new_email = get_new_email
-      @customer = CV.find_by_customer_vault_id(known_customer_vault_id)
-      expect{@customer.update!(:customer_vault_id => '')}.to raise_error(NmiDirectPost::MassAssignmentSecurity::Error, "Cannot mass-assign the following attributes: customer_vault_id")
+      expect{a_cc_customer.update!(:customer_vault_id => '')}.to raise_error(NmiDirectPost::MassAssignmentSecurity::Error, "Cannot mass-assign the following attributes: customer_vault_id")
     end
 
     it "should not interfere with other set variables" do
       new_email = get_new_email
       new_address = "#{Random.rand(1..1000)} Sesame Street"
-      @customer = CV.find_by_customer_vault_id(known_customer_vault_id)
-      old_email = @customer.shipping_email
-      @customer.shipping_email = new_email
-      @customer.update!(:shipping_address_1 => new_address)
-      @customer.response_text.should eq("Customer Update Successful")
-      @customer.success.should be_true
-      @customer.shipping_email.should eq(new_email)
-      @customer.save!
-      @customer.reload.shipping_email.should eq(new_email)
+      old_email = a_cc_customer.shipping_email
+      a_cc_customer.shipping_email = new_email
+      a_cc_customer.update!(:shipping_address_1 => new_address)
+      a_cc_customer.response_text.should eq("Customer Update Successful")
+      a_cc_customer.success.should be_true
+      a_cc_customer.shipping_email.should eq(new_email)
+      a_cc_customer.save!
+      a_cc_customer.reload.shipping_email.should eq(new_email)
     end
   end
 

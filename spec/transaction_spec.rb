@@ -1,7 +1,7 @@
 require_relative 'spec_helper'
 
 describe NmiDirectPost::Transaction do
-  let(:known_customer_vault_id) { TestCredentials::INSTANCE.known_customer_vault_id }
+  let(:a_cc_customer_vault_id) { TestCredentials::INSTANCE.cc_customer }
   let(:amount) { lambda { @amount_generator.rand(50..500) } }
 
   before :all do
@@ -32,7 +32,7 @@ describe NmiDirectPost::Transaction do
   end
 
   it "should allow saving with a bang" do
-    @transaction = NmiDirectPost::Transaction.new(:customer_vault_id => known_customer_vault_id, :amount => amount.call)
+    @transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => amount.call)
     expect {@transaction.save!}.to_not raise_error
   end
 
@@ -42,7 +42,7 @@ describe NmiDirectPost::Transaction do
   end
 
   it "should respond with a success code when given a valid customer_vault_id" do
-    given_a_sale_for_customer_vault_id known_customer_vault_id
+    given_a_sale_for_customer_vault_id a_cc_customer_vault_id
     expect_response_to_be 1, 100
     @transaction.response_text.should eq("SUCCESS"), @transaction.inspect
     @transaction.success.should be_true, @transaction.inspect
@@ -56,14 +56,14 @@ describe NmiDirectPost::Transaction do
   end
 
   it "should find a sale" do
-    given_a_sale_for_customer_vault_id known_customer_vault_id
+    given_a_sale_for_customer_vault_id a_cc_customer_vault_id
     if_the_transaction_succeeds
     it_should_find_the_transaction
     @queried_transaction.type.should eq "sale"
   end
 
   it "should find a validate" do
-    @transaction = NmiDirectPost::Transaction.new(:customer_vault_id => known_customer_vault_id, :amount => 0, :type => :validate)
+    @transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => 0, :type => :validate)
     @transaction.save
     if_the_transaction_succeeds
     it_should_find_the_transaction
