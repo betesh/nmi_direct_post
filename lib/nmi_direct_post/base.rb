@@ -46,11 +46,11 @@ module NmiDirectPost
       end
 
       def username
-        (@username || Base.username).tap { |_| raise StandardError, NO_CONNECTION if _.blank? }
+        @username || (in_base? ? raise_no_connection_error : superclass.username).tap { |_| raise_no_connection_error if _.blank? }
       end
 
       def password
-        (@password || Base.password).tap { |_| raise StandardError, NO_CONNECTION if _.blank? }
+        @password || (in_base? ? raise_no_connection_error : superclass.password).tap { |_| raise_no_connection_error if _.blank? }
       end
 
       def generate_query_string(attributes, target = self)
@@ -78,6 +78,14 @@ module NmiDirectPost
           http.ssl_version = :SSLv3
           http.verify_mode = OpenSSL::SSL::VERIFY_PEER
           http.request(request)
+        end
+
+        def in_base?
+          'Object' == superclass.name
+        end
+
+        def raise_no_connection_error
+          raise(StandardError, NO_CONNECTION)
         end
     end
 
