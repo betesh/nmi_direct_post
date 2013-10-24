@@ -3,6 +3,7 @@ require 'rspec/rails/extensions/active_record/base'
 
 describe NmiDirectPost::Transaction do
   let(:a_cc_customer_vault_id) { TestCredentials::INSTANCE.cc_customer }
+  let(:a_checking_account_customer_vault_id) { TestCredentials::INSTANCE.ach_customer }
   let(:amount) { lambda { @amount_generator.rand(50..500) } }
 
   before :all do
@@ -92,6 +93,71 @@ describe NmiDirectPost::Transaction do
     it "should be nil when it doesn't exist" do
       @transaction = NmiDirectPost::Transaction.new(:customer_vault_id => '123456', :amount => amount.call)
       @transaction.customer_vault.should be_nil
+    end
+  end
+
+  describe "type" do
+    describe "sale" do
+      it "should allow non-zero amounts for credit card customer vaults" do
+        NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => amount.call, :type => :sale).save.should be_true
+      end
+      it "should not allow amount to be 0 for credit card customer vaults" do
+        transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => 0, :type => :sale)
+        transaction.save.should be_false
+        transaction.should have(1).error
+        transaction.should have(1).errors_on(:amount)
+        transaction.errors_on(:amount).should include('Amount cannot be 0 for a sale action')
+      end
+      it "should allow non-zero amounts for checking account customer vaults" do
+        NmiDirectPost::Transaction.new(:customer_vault_id => a_checking_account_customer_vault_id, :amount => amount.call, :type => :sale).save.should be_true
+      end
+      it "should not allow amount to be 0 for checking account customer vaults" do
+        transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_checking_account_customer_vault_id, :amount => 0, :type => :sale)
+        transaction.save.should be_false
+        transaction.should have(1).error
+        transaction.should have(1).errors_on(:amount)
+        transaction.errors_on(:amount).should include('Amount cannot be 0 for a sale action')
+      end
+      it "should allow non-zero amounts for credit card customer vaults when sale is implied" do
+        NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => amount.call).save.should be_true
+      end
+      it "should not allow amount to be 0 for credit card customer vaults when sale is implied" do
+        transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => 0)
+        transaction.save.should be_false
+        transaction.should have(1).error
+        transaction.should have(1).errors_on(:amount)
+        transaction.errors_on(:amount).should include('Amount cannot be 0 for a sale action')
+      end
+      it "should allow non-zero amounts for checking account customer vaults when sale is implied" do
+        NmiDirectPost::Transaction.new(:customer_vault_id => a_checking_account_customer_vault_id, :amount => amount.call).save.should be_true
+      end
+      it "should not allow amount to be 0 for checking account customer vaults when sale is implied" do
+        transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_checking_account_customer_vault_id, :amount => 0)
+        transaction.save.should be_false
+        transaction.should have(1).error
+        transaction.should have(1).errors_on(:amount)
+        transaction.errors_on(:amount).should include('Amount cannot be 0 for a sale action')
+      end
+    end
+
+    describe "validate" do
+      it "should not allow non-zero amounts" do
+        transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => amount.call, :type => :validate)
+        transaction.save.should be_false
+        transaction.should have(1).error
+        transaction.should have(1).errors_on(:amount)
+        transaction.errors_on(:amount).should include('Amount must be 0 for a validate action')
+      end
+      it "should allow amount to be 0" do
+        NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => 0, :type => :validate).save.should be_true
+      end
+      it "should not be allowed for checking account customer vaults" do
+        transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_checking_account_customer_vault_id, :amount => 0, :type => :validate)
+        transaction.save.should be_false
+        transaction.should have(1).error
+        transaction.should have(1).errors_on(:type)
+        transaction.errors_on(:type).should include('validate is not a valid action for a customer vault that uses a checking account')
+      end
     end
   end
 end
