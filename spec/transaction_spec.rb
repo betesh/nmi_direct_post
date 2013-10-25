@@ -160,4 +160,39 @@ describe NmiDirectPost::Transaction do
       end
     end
   end
+
+  describe "condition" do
+    def given_a_check_transaction
+      transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_checking_account_customer_vault_id, :amount => amount.call)
+      transaction.save!
+      @amount = transaction.amount
+      @transaction = NmiDirectPost::Transaction.find_by_transaction_id(transaction.transaction_id)
+    end
+    def given_a_cc_transaction
+      transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => amount.call)
+      transaction.save!
+      @amount = transaction.amount
+      @transaction = NmiDirectPost::Transaction.find_by_transaction_id(transaction.transaction_id)
+    end
+    it "should be pendingsettlement on a new check" do
+      given_a_check_transaction
+      @transaction.condition.should eq("pendingsettlement")
+      @transaction.pending?.should be_true
+      @transaction.cleared?.should be_false
+      @transaction.amount.should == @amount
+    end
+    it "should be pending on a new CC charge" do
+      given_a_cc_transaction
+      @transaction.condition.should eq("pendingsettlement")
+      @transaction.pending?.should be_true
+      @transaction.cleared?.should be_false
+      @transaction.amount.should == @amount
+    end
+    it "should be approved on an existing CC charge" do
+      transaction = NmiDirectPost::Transaction.find_by_transaction_id(TestCredentials::INSTANCE.cc_transaction)
+      transaction.condition.should eq("complete")
+      transaction.pending?.should be_false
+      transaction.cleared?.should be_true
+    end
+  end
 end

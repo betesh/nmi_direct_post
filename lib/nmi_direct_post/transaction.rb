@@ -9,7 +9,7 @@ module NmiDirectPost
     SAFE_PARAMS = [:customer_vault_id, :type, :amount]
 
     attr_reader *SAFE_PARAMS
-    attr_reader :auth_code, :avs_response, :cvv_response, :order_id, :type, :dup_seconds, :customer_vault
+    attr_reader :auth_code, :avs_response, :cvv_response, :order_id, :type, :dup_seconds, :customer_vault, :condition
     attr_reader :transaction_id
 
     validates_presence_of :customer_vault_id, :amount, :unless => :'finding_by_transaction_id?', :message => "%{attribute} cannot be blank"
@@ -50,6 +50,14 @@ module NmiDirectPost
       end
     end
 
+    def pending?
+      'pendingsettlement' == @condition
+    end
+
+    def cleared?
+      "complete" == @condition
+    end
+
     private
       def safe_params
         generate_query_string(SAFE_PARAMS)
@@ -70,6 +78,7 @@ module NmiDirectPost
         @response = hash["action"]["success"].to_i
         @response_code = hash["action"]["response_code"].to_i
         @response_text = hash["action"]["response_text"]
+        @condition = hash["condition"]
       end
 
       def post(query)
