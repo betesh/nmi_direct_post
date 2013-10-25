@@ -58,6 +58,10 @@ module NmiDirectPost
       "complete" == @condition
     end
 
+    def failed?
+      "failed" == @condition
+    end
+
     private
       def safe_params
         generate_query_string(SAFE_PARAMS)
@@ -73,12 +77,14 @@ module NmiDirectPost
         @auth_code = hash["authorization_code"]
         @customer_vault_id = hash["customerid"].to_i
         @avs_response = hash["avs_response"]
-        @amount = hash["action"]["amount"].to_f
-        @type = hash["action"]["action_type"]
-        @response = hash["action"]["success"].to_i
-        @response_code = hash["action"]["response_code"].to_i
-        @response_text = hash["action"]["response_text"]
         @condition = hash["condition"]
+        action = hash["action"]
+        action = action.last unless action.is_a?(Hash)
+        @amount = action["amount"].to_f
+        @type = action["action_type"]
+        @response = action["success"].to_i
+        @response_code = action["response_code"].to_i
+        @response_text = action["response_text"]
       end
 
       def post(query)
