@@ -51,15 +51,15 @@ module NmiDirectPost
     end
 
     def pending?
-      'pendingsettlement' == @condition
+      'pendingsettlement' == condition
     end
 
     def cleared?
-      "complete" == @condition
+      "complete" == condition
     end
 
     def failed?
-      "failed" == @condition
+      "failed" == condition
     end
 
     private
