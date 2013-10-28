@@ -1,4 +1,5 @@
 require_relative 'base'
+require_relative 'customer_vault'
 
 module NmiDirectPost
   class TransactionNotFoundError < StandardError; end
