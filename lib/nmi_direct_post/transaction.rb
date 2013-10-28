@@ -74,6 +74,7 @@ module NmiDirectPost
 
       def get(query)
         hash = self.class.get(query)["transaction"]
+        hash = hash.keep_if { |v| v['transaction_id'].to_s == self.transaction_id.to_s }.first if hash.is_a?(Array)
         raise TransactionNotFoundError, "No transaction found for TransactionID #{@transaction_id}" if hash.nil?
         @auth_code = hash["authorization_code"]
         @customer_vault_id = hash["customerid"].to_i
