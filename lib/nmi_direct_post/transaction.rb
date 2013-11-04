@@ -26,7 +26,7 @@ module NmiDirectPost
       @type, @amount = attributes[:type].to_s, attributes[:amount].to_f
       @transaction_id = attributes[:transaction_id].to_i if attributes[:transaction_id]
       @customer_vault_id = attributes[:customer_vault_id].to_i if attributes[:customer_vault_id]
-      get(transaction_params) if (!@transaction_id.blank? && self.valid?)
+      reload if (finding_by_transaction_id? && self.valid?)
     end
 
     def save
@@ -34,7 +34,7 @@ module NmiDirectPost
       _safe_params = safe_params
       puts "Sending Direct Post Transaction to NMI: #{_safe_params}"
       post([_safe_params, transaction_params].join('&'))
-      valid?
+      valid?.tap { |_| reload if _ }
     end
 
     def save!
@@ -69,6 +69,11 @@ module NmiDirectPost
 
     def customer_vault
       @customer_vault ||= CustomerVault.find_by_customer_vault_id(@customer_vault_id) unless @customer_vault_id.blank?
+    end
+
+    def reload
+      get(transaction_params)
+      self
     end
 
     private
@@ -109,7 +114,7 @@ module NmiDirectPost
       end
 
       def finding_by_transaction_id?
-        !transaction_id.nil?
+        !transaction_id.blank?
       end
 
       def is_validate?

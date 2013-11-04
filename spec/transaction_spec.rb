@@ -114,7 +114,8 @@ describe NmiDirectPost::Transaction do
   describe "type" do
     describe "sale" do
       it "should allow non-zero amounts for credit card customer vaults" do
-        NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => amount.call, :type => :sale).save.should be_true
+        transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => amount.call, :type => :sale)
+        transaction.save.should be_true, transaction.errors.full_messages
       end
       it "should not allow amount to be 0 for credit card customer vaults" do
         transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => 0, :type => :sale)
@@ -134,7 +135,8 @@ describe NmiDirectPost::Transaction do
         transaction.errors_on(:amount).should include('Amount cannot be 0 for a sale')
       end
       it "should allow non-zero amounts for credit card customer vaults when sale is implied" do
-        NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => amount.call).save.should be_true
+        transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => amount.call)
+        transaction.save.should be_true, transaction.errors.inspect
       end
       it "should not allow amount to be 0 for credit card customer vaults when sale is implied" do
         transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => 0)
