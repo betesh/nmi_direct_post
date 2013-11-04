@@ -15,7 +15,7 @@ module NmiDirectPost
 
     validates_presence_of :customer_vault_id, :amount, :unless => :'finding_by_transaction_id?', :message => "%{attribute} cannot be blank"
     validates_presence_of :customer_vault, :unless => :'customer_vault_id.blank?', :message => "%{attribute} with the given customer_vault could not be found"
-    validates_inclusion_of :type, :in => ["sale", "authorization", "capture", "void", "refund", "credit", "validate", "update", ""]
+    validates_inclusion_of :type, :in => ["sale", "auth", "capture", "void", "refund", "credit", "validate", "update", ""]
     validates_exclusion_of :type, :in => ["validate"], :if => :'customer_vault_is_checking?', :message => "%{value} is not a valid action for a customer vault that uses a checking account"
     validates_numericality_of :amount, :equal_to => 0, :if => :'is_validate?', :message => "%{attribute} must be 0 for a validate action"
     validates_numericality_of :amount, :greater_than => 0, :if => :'is_sale?', :message => "%{attribute} cannot be 0 for a sale action"
