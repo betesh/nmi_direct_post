@@ -19,6 +19,7 @@ module NmiDirectPost
     validates_exclusion_of :type, :in => ["validate"], :if => :'customer_vault_is_checking?', :message => "%{value} is not a valid action for a customer vault that uses a checking account"
     validates_numericality_of :amount, :equal_to => 0, :if => :'is_validate?', :message => "%{attribute} must be 0 for a validate action"
     validates_numericality_of :amount, :greater_than => 0, :if => :'is_sale?', :message => "%{attribute} cannot be 0 for a sale action"
+    validate :save_successful?, :unless => :'response.blank?'
 
     def initialize(attributes)
       super()
@@ -33,7 +34,7 @@ module NmiDirectPost
       _safe_params = safe_params
       puts "Sending Direct Post Transaction to NMI: #{_safe_params}"
       post([_safe_params, transaction_params].join('&'))
-      true
+      valid?
     end
 
     def save!
@@ -60,6 +61,10 @@ module NmiDirectPost
 
     def failed?
       "failed" == condition
+    end
+
+    def declined?
+      2 == response
     end
 
     def customer_vault
@@ -113,6 +118,13 @@ module NmiDirectPost
 
       def is_sale?
         !finding_by_transaction_id? && (['sale', ''].include?(type.to_s))
+      end
+
+      def save_successful?
+        return if (success || declined?)
+        self.errors.add(:response, response.to_s)
+        self.errors.add(:response_code, response_code.to_s)
+        self.errors.add(:response_text, response_text)
       end
   end
 end

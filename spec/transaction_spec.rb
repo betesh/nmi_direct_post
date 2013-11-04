@@ -86,6 +86,19 @@ describe NmiDirectPost::Transaction do
     NmiDirectPost::Transaction.find_by_transaction_id(12345).should be_nil
   end
 
+  it "should add response, response_code and response to errors when charge cannot be saved" do
+    transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => 0, :type => :validate)
+    transaction.instance_variable_set("@password", '12345')
+    transaction.save.should be_false
+    transaction.should have(3).errors, transaction.errors.inspect
+    transaction.should have(1).errors_on(:response), transaction.errors[:response].inspect
+    transaction.errors_on(:response).should include('3'), transaction.errors.inspect
+    transaction.should have(1).errors_on(:response_code), transaction.errors[:response_code].inspect
+    transaction.errors_on(:response_code).should include('300')
+    transaction.should have(1).errors_on(:response_text), transaction.errors[:response_text].inspect
+    transaction.errors_on(:response_text).should include('Authentication Failed')
+  end
+
   describe "customer_vault" do
     it "should find when it exists" do
       @transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => amount.call)
