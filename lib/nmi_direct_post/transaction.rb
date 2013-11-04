@@ -10,7 +10,7 @@ module NmiDirectPost
     SAFE_PARAMS = [:customer_vault_id, :type, :amount]
 
     attr_reader *SAFE_PARAMS
-    attr_reader :auth_code, :avs_response, :cvv_response, :order_id, :type, :dup_seconds, :customer_vault, :condition
+    attr_reader :auth_code, :avs_response, :cvv_response, :order_id, :type, :dup_seconds, :condition
     attr_reader :transaction_id
 
     validates_presence_of :customer_vault_id, :amount, :unless => :'finding_by_transaction_id?', :message => "%{attribute} cannot be blank"
@@ -25,7 +25,6 @@ module NmiDirectPost
       @type, @amount = attributes[:type].to_s, attributes[:amount].to_f
       @transaction_id = attributes[:transaction_id].to_i if attributes[:transaction_id]
       @customer_vault_id = attributes[:customer_vault_id].to_i if attributes[:customer_vault_id]
-      @customer_vault = CustomerVault.find_by_customer_vault_id(@customer_vault_id) unless @customer_vault_id.blank?
       get(transaction_params) if (!@transaction_id.blank? && self.valid?)
     end
 
@@ -61,6 +60,10 @@ module NmiDirectPost
 
     def failed?
       "failed" == condition
+    end
+
+    def customer_vault
+      @customer_vault ||= CustomerVault.find_by_customer_vault_id(@customer_vault_id) unless @customer_vault_id.blank?
     end
 
     private

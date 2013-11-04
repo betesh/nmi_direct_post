@@ -31,6 +31,8 @@ describe NmiDirectPost::Transaction do
     @queried_transaction.should_not be_nil
     @queried_transaction.amount.should eq @transaction.amount
     @queried_transaction.customer_vault_id.should eq @transaction.customer_vault_id
+    @queried_transaction.customer_vault.should_not be_nil
+    @queried_transaction.customer_vault.first_name.should == @transaction.customer_vault.first_name
   end
 
   it "should allow saving with a bang" do
