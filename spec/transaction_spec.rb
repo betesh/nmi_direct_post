@@ -121,7 +121,7 @@ describe NmiDirectPost::Transaction do
         transaction.save.should be_false
         transaction.should have(1).error
         transaction.should have(1).errors_on(:amount)
-        transaction.errors_on(:amount).should include('Amount cannot be 0 for a sale action')
+        transaction.errors_on(:amount).should include('Amount cannot be 0 for a sale')
       end
       it "should allow non-zero amounts for checking account customer vaults" do
         NmiDirectPost::Transaction.new(:customer_vault_id => a_checking_account_customer_vault_id, :amount => amount.call, :type => :sale).save.should be_true
@@ -131,7 +131,7 @@ describe NmiDirectPost::Transaction do
         transaction.save.should be_false
         transaction.should have(1).error
         transaction.should have(1).errors_on(:amount)
-        transaction.errors_on(:amount).should include('Amount cannot be 0 for a sale action')
+        transaction.errors_on(:amount).should include('Amount cannot be 0 for a sale')
       end
       it "should allow non-zero amounts for credit card customer vaults when sale is implied" do
         NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => amount.call).save.should be_true
@@ -141,7 +141,7 @@ describe NmiDirectPost::Transaction do
         transaction.save.should be_false
         transaction.should have(1).error
         transaction.should have(1).errors_on(:amount)
-        transaction.errors_on(:amount).should include('Amount cannot be 0 for a sale action')
+        transaction.errors_on(:amount).should include('Amount cannot be 0 for a sale')
       end
       it "should allow non-zero amounts for checking account customer vaults when sale is implied" do
         NmiDirectPost::Transaction.new(:customer_vault_id => a_checking_account_customer_vault_id, :amount => amount.call).save.should be_true
@@ -151,7 +151,7 @@ describe NmiDirectPost::Transaction do
         transaction.save.should be_false
         transaction.should have(1).error
         transaction.should have(1).errors_on(:amount)
-        transaction.errors_on(:amount).should include('Amount cannot be 0 for a sale action')
+        transaction.errors_on(:amount).should include('Amount cannot be 0 for a sale')
       end
     end
 
@@ -161,7 +161,7 @@ describe NmiDirectPost::Transaction do
         transaction.save.should be_false
         transaction.should have(1).error
         transaction.should have(1).errors_on(:amount)
-        transaction.errors_on(:amount).should include('Amount must be 0 for a validate action')
+        transaction.errors_on(:amount).should include('Amount must be 0 when validating a credit card')
       end
       it "should allow amount to be 0" do
         NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => 0, :type => :validate).save.should be_true
