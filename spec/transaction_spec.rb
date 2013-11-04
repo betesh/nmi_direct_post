@@ -115,7 +115,7 @@ describe NmiDirectPost::Transaction do
     describe "sale" do
       it "should allow non-zero amounts for credit card customer vaults" do
         transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => amount.call, :type => :sale)
-        transaction.save.should be_true, transaction.errors.full_messages
+        transaction.save.should be_true, transaction.errors.inspect
       end
       it "should not allow amount to be 0 for credit card customer vaults" do
         transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => 0, :type => :sale)
@@ -171,9 +171,91 @@ describe NmiDirectPost::Transaction do
       it "should not be allowed for checking account customer vaults" do
         transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_checking_account_customer_vault_id, :amount => 0, :type => :validate)
         transaction.save.should be_false
-        transaction.should have(1).error
-        transaction.should have(1).errors_on(:type)
+        transaction.should have(1).error, transaction.errors.inspect
+        transaction.should have(1).errors_on(:type), transaction.errors.inspect
         transaction.errors_on(:type).should include('validate is not a valid action for a customer vault that uses a checking account')
+      end
+    end
+
+    describe "auth" do
+      it "should allow non-zero amounts for credit card customer vaults" do
+        transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => amount.call, :type => :auth)
+        transaction.save.should be_true, transaction.errors.inspect
+      end
+      it "should not allow amount to be 0 for credit card customer vaults" do
+        transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => 0, :type => :auth)
+        transaction.save.should be_false
+        transaction.should have(1).error, transaction.errors.inspect
+        transaction.should have(1).errors_on(:amount), transaction.errors.inspect
+        transaction.errors_on(:amount).should include('Amount cannot be 0 for an authorization')
+      end
+      it "should not be allowed for checking account customer vaults" do
+        transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_checking_account_customer_vault_id, :amount => amount.call, :type => :auth)
+        transaction.save.should be_false
+        transaction.should have(1).error, transaction.errors.inspect
+        transaction.should have(1).errors_on(:type), transaction.errors.inspect
+        transaction.errors_on(:type).should include('auth is not a valid action for a customer vault that uses a checking account')
+      end
+    end
+
+    describe "void" do
+      it "should be allowed for a pending sale" do
+        transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => amount.call)
+        transaction.save!
+        transaction.void!.should be_true
+      end
+      it "should not be allowed for validates" do
+        transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => 0, :type => :validate)
+        transaction.save!
+        transaction.void!.should be_false
+        transaction.should have(1).error, transaction.errors.inspect
+        transaction.should have(1).errors_on(:type), transaction.errors.inspect
+        transaction.errors_on(:type).should include('Void is only a valid action for a pending or unsettled authorization, or an unsettled sale')
+      end
+      it "should be allowed for authorizations when saved and voided on same instantiation" do
+        transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => amount.call, :type => :auth)
+        transaction.save.should be_true, transaction.inspect
+        transaction.void!.should be_true, transaction.inspect
+        transaction.should have(0).errors, transaction.errors.inspect
+      end
+      it "should be allowed for authorizations when found by transaction ID" do
+        transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => amount.call, :type => :auth)
+        transaction.save!
+        transaction = NmiDirectPost::Transaction.find_by_transaction_id(transaction.transaction_id)
+        transaction.void!.should be_true, transaction.inspect
+        transaction.should have(0).errors, transaction.errors.inspect
+      end
+      it "should be allowed for authorizations when instantiated as a void" do
+        transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => amount.call, :type => :auth)
+        transaction.save!
+        transaction = NmiDirectPost::Transaction.new(:transaction_id => transaction.transaction_id, :type => :void)
+        transaction.save.should be_true, transaction.errors.inspect
+        transaction.should have(0).errors, transaction.errors.inspect
+      end
+      it "should not be allowed for an unpersisted transaction" do
+        transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => amount.call, :type => :auth)
+        transaction.void!.should be_false, transaction.inspect
+        transaction.should have(1).errors, transaction.errors.inspect
+        transaction.should have(1).errors_on(:type), transaction.errors.inspect
+        transaction.errors_on(:type).should include('Void is only a valid action for a transaction that has already been sent to NMI')
+      end
+      it "should not be allowed for a voided sale" do
+        transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => amount.call)
+        transaction.save!
+        transaction.void!.should be_true
+        transaction.void!.should be_false
+        transaction.should have(1).error, transaction.errors.inspect
+        transaction.should have(1).errors_on(:type), transaction.errors.inspect
+        transaction.errors_on(:type).should include('Void is only a valid action for a pending or unsettled authorization, or an unsettled sale')
+      end
+      it "should not be allowed for a voided auth" do
+        transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => amount.call, :type => :auth)
+        transaction.save!
+        transaction.void!.should be_true
+        transaction.void!.should be_false
+        transaction.should have(1).error, transaction.errors.inspect
+        transaction.should have(1).errors_on(:type), transaction.errors.inspect
+        transaction.errors_on(:type).should include('Void is only a valid action for a pending or unsettled authorization, or an unsettled sale')
       end
     end
   end

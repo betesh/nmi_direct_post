@@ -16,9 +16,12 @@ module NmiDirectPost
     validates_presence_of :customer_vault_id, :amount, :unless => :'finding_by_transaction_id?', :message => "%{attribute} cannot be blank"
     validates_presence_of :customer_vault, :unless => :'customer_vault_id.blank?', :message => "%{attribute} with the given customer_vault could not be found"
     validates_inclusion_of :type, :in => ["sale", "auth", "capture", "void", "refund", "credit", "validate", "update", ""]
-    validates_exclusion_of :type, :in => ["validate"], :if => :'customer_vault_is_checking?', :message => "%{value} is not a valid action for a customer vault that uses a checking account"
+    validates_exclusion_of :type, :in => ["validate", "auth", "capture", "void"], :if => :'customer_vault_is_checking?', :message => "%{value} is not a valid action for a customer vault that uses a checking account"
     validates_numericality_of :amount, :equal_to => 0, :if => :'is_validate?', :message => "%{attribute} must be 0 when validating a credit card"
     validates_numericality_of :amount, :greater_than => 0, :if => :'is_sale?', :message => "%{attribute} cannot be 0 for a sale"
+    validates_numericality_of :amount, :greater_than => 0, :if => :'is_auth?', :message => "%{attribute} cannot be 0 for an authorization"
+    validate :voidable_transaction?, :if => :is_void?
+    validate :persisted?, :if => :is_void?
     validate :save_successful?, :unless => :'response.blank?'
 
     def initialize(attributes)
@@ -27,9 +30,11 @@ module NmiDirectPost
       @transaction_id = attributes[:transaction_id].to_i if attributes[:transaction_id]
       @customer_vault_id = attributes[:customer_vault_id].to_i if attributes[:customer_vault_id]
       reload if (finding_by_transaction_id? && self.valid?)
+      @type, @amount = attributes[:type].to_s, attributes[:amount].to_f if ['void', 'capture'].include?(attributes[:type].to_s)
     end
 
     def save
+      void! if ('void' == type && condition.blank?)
       return false if self.invalid?
       _safe_params = safe_params
       puts "Sending Direct Post Transaction to NMI: #{_safe_params}"
@@ -65,6 +70,16 @@ module NmiDirectPost
 
     def declined?
       2 == response
+    end
+
+    def void!
+      @type='void'
+      if condition.blank?
+        return false if invalid?
+        reload
+        @type = 'void'
+      end
+      save
     end
 
     def customer_vault
@@ -125,11 +140,27 @@ module NmiDirectPost
         !finding_by_transaction_id? && (['sale', ''].include?(type.to_s))
       end
 
+      def is_auth?
+        !finding_by_transaction_id? && ('auth' == type.to_s)
+      end
+
+      def is_void?
+        !customer_vault_is_checking? && ('void' == type.to_s)
+      end
+
       def save_successful?
         return if (success || declined?)
         self.errors.add(:response, response.to_s)
         self.errors.add(:response_code, response_code.to_s)
         self.errors.add(:response_text, response_text)
+      end
+
+      def voidable_transaction?
+        self.errors.add(:type, "Void is only a valid action for a pending or unsettled authorization, or an unsettled sale") if (finding_by_transaction_id? && !['pending', 'pendingsettlement'].include?(condition)) unless condition.blank?
+      end
+
+      def persisted?
+        self.errors.add(:type, "Void is only a valid action for a transaction that has already been sent to NMI") unless finding_by_transaction_id?
       end
   end
 end
