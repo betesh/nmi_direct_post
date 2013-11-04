@@ -52,7 +52,7 @@ describe NmiDirectPost::Transaction do
     @transaction.success.should be_true, @transaction.inspect
   end
 
-  it "should respond with a decline code when given an invalid customer_vault_id" do
+  it "should fail validation when given an invalid customer_vault_id" do
     @transaction = NmiDirectPost::Transaction.new(:customer_vault_id => 1000, :amount => amount.call)
     @transaction.save.should be_false
     @transaction.should have(1).errors_on(:customer_vault)
