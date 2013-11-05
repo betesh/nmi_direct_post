@@ -37,7 +37,7 @@ module NmiDirectPost
       void! if ('void' == type && condition.blank?)
       return false if self.invalid?
       _safe_params = safe_params
-      puts "Sending Direct Post Transaction to NMI: #{_safe_params}"
+      logger.info { "Sending Direct Post Transaction to NMI: #{_safe_params}" }
       post([_safe_params, transaction_params].join('&'))
       valid?.tap { |_| reload if _ }
     end
@@ -48,7 +48,7 @@ module NmiDirectPost
 
     def self.find_by_transaction_id(transaction_id)
       raise StandardError, "TransactionID cannot be blank" if transaction_id.blank?
-      puts "Looking up NMI transaction by transaction_id(#{transaction_id})"
+      NmiDirectPost.logger.debug { "Looking up NMI transaction by transaction_id(#{transaction_id})" }
       begin
         new(:transaction_id => transaction_id)
       rescue TransactionNotFoundError

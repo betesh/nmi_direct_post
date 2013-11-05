@@ -13,6 +13,7 @@ require 'active_model/validations'
 require 'active_model/errors'
 require 'active_support/core_ext/object/blank'
 require 'addressable/uri'
+require_relative 'logger'
 
 module NmiDirectPost
   class Base
@@ -37,6 +38,10 @@ module NmiDirectPost
 
     def success
       1 == self.response
+    end
+
+    def logger
+      NmiDirectPost.logger
     end
 
     class << self

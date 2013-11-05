@@ -82,7 +82,7 @@ module NmiDirectPost
       end
       begin
         safe_params = customer_vault_instance_params
-        puts "Loading NMI customer vault from customer_vault_id(#{customer_vault_id}) using query: #{safe_params}"
+        logger.debug { "Loading NMI customer vault from customer_vault_id(#{customer_vault_id}) using query: #{safe_params}" }
         response = self.class.get(self.class.all_params(safe_params))["customer_vault"]
         raise CustomerVaultNotFoundError, "No record found for customer vault ID #{self.customer_vault_id}" if response.nil?
         attributes = response["customer"]
@@ -130,7 +130,7 @@ module NmiDirectPost
       def all_ids
         @report_type = :customer_vault
         safe_params = generate_query_string([:report_type])
-        puts "Loading all NMI customer vaults using query: #{safe_params}"
+        NmiDirectPost.logger.debug { "Loading all NMI customer vaults using query: #{safe_params}" }
         begin
           customers = get(all_params(safe_params))["customer_vault"]
         ensure
@@ -161,7 +161,7 @@ module NmiDirectPost
       end
 
       def post(safe_params)
-        puts "Sending Direct Post to NMI: #{safe_params}"
+        logger.info { "Sending Direct Post to NMI: #{safe_params}" }
         response = self.class.post(self.class.all_params(safe_params))
         @response, @response_text, @response_code = response["response"].to_i, response["responsetext"], response["response_code"].to_i
         @customer_vault_id = response["customer_vault_id"].to_i if :add_customer == self.customer_vault
