@@ -23,6 +23,9 @@ describe NmiDirectPost do
     before(:each) do
       NmiDirectPost.reset_logger
     end
+    after(:all) do
+      NmiDirectPost.reset_logger
+    end
 
     it "should default to a STDOUT logger if Rails is not defined" do
       NmiDirectPost.logger.instance_variable_get("@logdev").instance_variable_get("@dev").should == STDOUT
