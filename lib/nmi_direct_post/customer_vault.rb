@@ -49,7 +49,7 @@ module NmiDirectPost
 
     def create
       post_action(:add)
-      self.success
+      self.success?
     end
 
     def update!(attributes)
@@ -66,7 +66,7 @@ module NmiDirectPost
     def save!
       post_action(:update)
       reload
-      self.success
+      self.success?
     end
 
     def destroy

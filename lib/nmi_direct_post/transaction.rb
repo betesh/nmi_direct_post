@@ -149,7 +149,7 @@ module NmiDirectPost
       end
 
       def save_successful?
-        return if (success || declined?)
+        return if (success? || declined?)
         self.errors.add(:response, response.to_s)
         self.errors.add(:response_code, response_code.to_s)
         self.errors.add(:response_text, response_text)

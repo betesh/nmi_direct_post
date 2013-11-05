@@ -49,7 +49,7 @@ describe NmiDirectPost::Transaction do
     given_a_sale_for_customer_vault_id a_cc_customer_vault_id
     expect_response_to_be 1, 100
     @transaction.response_text.should eq("SUCCESS"), @transaction.inspect
-    @transaction.success.should be_true, @transaction.inspect
+    @transaction.success?.should be_true, @transaction.inspect
   end
 
   it "should fail validation when given an invalid customer_vault_id" do

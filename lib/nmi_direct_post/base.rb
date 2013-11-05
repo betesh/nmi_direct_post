@@ -36,7 +36,7 @@ module NmiDirectPost
       false
     end
 
-    def success
+    def success?
       1 == self.response
     end
 

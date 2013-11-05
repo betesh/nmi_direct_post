@@ -52,7 +52,7 @@ describe NmiDirectPost::CustomerVault do
       new_email = get_new_email
       @customer = CV.new(:first_name => "George", :last_name => "Washington", :cc_number => "4111111111111111", :cc_exp => "06/16")
       @customer.create.should be_true
-      @customer.destroy.success.should be_true
+      @customer.destroy.success?.should be_true
       @customer.cc_exp.should eq("06/16")
     end
 
@@ -60,7 +60,7 @@ describe NmiDirectPost::CustomerVault do
       new_email = get_new_email
       @customer = CV.new(:first_name => "George", :last_name => "Washington", :check_aba => "123123123", :check_account => "123123123", :check_name => "my checking account")
       @customer.create.should be_true
-      @customer.destroy.success.should be_true
+      @customer.destroy.success?.should be_true
     end
 
     [[:cc_number, :check_name], [:cc_number, :check_account], [:cc_number, :check_aba], [:cc_exp, :check_name], [:cc_exp, :check_account], [:cc_exp, :check_aba]].each do |attrs|
@@ -82,7 +82,7 @@ describe NmiDirectPost::CustomerVault do
       a_cc_customer.shipping_email = new_email
       a_cc_customer.save!
       a_cc_customer.response_text.should eq("Customer Update Successful")
-      a_cc_customer.success.should be_true
+      a_cc_customer.success?.should be_true
       a_cc_customer.shipping_email.should eq(new_email)
       a_cc_customer.reload.shipping_email.should eq(new_email)
     end
@@ -94,7 +94,7 @@ describe NmiDirectPost::CustomerVault do
       new_field_2 = Random.rand(1..1000)
       a_cc_customer.update!(:merchant_defined_field_1 => new_field_1, :merchant_defined_field_2 => new_field_2)
       a_cc_customer.response_text.should eq("Customer Update Successful")
-      a_cc_customer.success.should be_true
+      a_cc_customer.success?.should be_true
       a_cc_customer.reload
       a_cc_customer.merchant_defined_field_1.should eq(new_field_1.to_s)
       a_cc_customer.merchant_defined_field_2.should eq(new_field_2.to_s)
@@ -104,7 +104,7 @@ describe NmiDirectPost::CustomerVault do
       new_email = get_new_email
       a_cc_customer.update!(:shipping_email => new_email)
       a_cc_customer.response_text.should eq("Customer Update Successful")
-      a_cc_customer.success.should be_true
+      a_cc_customer.success?.should be_true
       a_cc_customer.shipping_email.should eq(new_email)
       a_cc_customer.reload.shipping_email.should eq(new_email)
     end
@@ -116,7 +116,7 @@ describe NmiDirectPost::CustomerVault do
       a_cc_customer.shipping_email = new_email
       a_cc_customer.update!(:shipping_address_1 => new_address)
       a_cc_customer.response_text.should eq("Customer Update Successful")
-      a_cc_customer.success.should be_true
+      a_cc_customer.success?.should be_true
       a_cc_customer.shipping_email.should eq(new_email)
       a_cc_customer.reload.shipping_email.should eq(old_email)
     end
@@ -133,7 +133,7 @@ describe NmiDirectPost::CustomerVault do
       a_cc_customer.shipping_email = new_email
       a_cc_customer.update!(:shipping_address_1 => new_address)
       a_cc_customer.response_text.should eq("Customer Update Successful")
-      a_cc_customer.success.should be_true
+      a_cc_customer.success?.should be_true
       a_cc_customer.shipping_email.should eq(new_email)
       a_cc_customer.save!
       a_cc_customer.reload.shipping_email.should eq(new_email)
@@ -145,7 +145,7 @@ describe NmiDirectPost::CustomerVault do
       @customer = CV.new({})
       @customer.customer_vault_id.should be_nil
       @customer.reload
-      @customer.success.should be_false
+      @customer.success?.should be_false
       @customer.response.should be_nil
       @customer.errors.full_messages.should eq(["Customer vault You must specify a Customer vault ID when looking up an individual customer vault"])
     end
