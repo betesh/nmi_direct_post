@@ -22,7 +22,7 @@ module NmiDirectPost
     validates_numericality_of :amount, :greater_than => 0, :if => :'is_auth?', :message => "%{attribute} cannot be 0 for an authorization"
     validate :voidable_transaction?, :if => :is_void?
     validate :persisted?, :if => :is_void?
-    validate :save_successful?, :unless => :'response.blank?'
+    validate :save_successful?, :unless => :'response_text.blank?'
 
     def initialize(attributes)
       super()
@@ -112,8 +112,8 @@ module NmiDirectPost
         action = action.last unless action.is_a?(Hash)
         @amount = action["amount"].to_f
         @type = action["action_type"]
-        @response = action["success"].to_i
-        @response_code = action["response_code"].to_i
+        @response = action["success"].to_i if action.key?("success")
+        @response_code = action["response_code"].to_i if action.key?("response_code")
         @response_text = action["response_text"]
       end
 
