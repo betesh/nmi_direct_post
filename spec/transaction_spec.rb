@@ -294,4 +294,9 @@ describe NmiDirectPost::Transaction do
       transaction.cleared?.should be_true
     end
   end
+
+  it "should not reload when transaction_id is missing" do
+    transaction = NmiDirectPost::Transaction.new(:customer_vault_id => a_cc_customer_vault_id, :amount => amount.call)
+    expect{transaction.reload}.to_not raise_error
+  end
 end

@@ -87,7 +87,7 @@ module NmiDirectPost
     end
 
     def reload
-      get(transaction_params)
+      get(transaction_params) if finding_by_transaction_id?
       self
     end
 
