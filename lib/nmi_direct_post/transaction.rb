@@ -119,7 +119,9 @@ module NmiDirectPost
 
       def post(query)
         response = self.class.post(query)
-        @response, @response_text, @avs_response, @cvv_response, @response_code = response["response"].to_i, response["responsetext"], response["avsresponse"], response["cvvresponse"], response["response_code"].to_i
+        @response = response["response"].to_i if response.key?("response")
+        @response_code = response["response_code"].to_i if response.key?("response_code")
+        @response_text, @avs_response, @cvv_response = response["responsetext"], response["avsresponse"], response["cvvresponse"]
         @dup_seconds, @order_id, @auth_code = response["dup_seconds"], response["orderid"], response["authcode"]
         @transaction_id = response["transactionid"]
       end
