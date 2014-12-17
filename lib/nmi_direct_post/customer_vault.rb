@@ -28,7 +28,8 @@ module NmiDirectPost
     attr_reader *READ_ONLY_ATTRIBUTES
     attr_reader :customer_vault_id, :customer_vault, :report_type
 
-    WHITELIST_ATTRIBUTES = [:id, :first_name, :last_name, :address_1, :address_2, :company, :city, :state, :postal_code, :country, :email, :phone, :fax, :cell_phone, :customertaxid, :website, :shipping_first_name, :shipping_last_name, :shipping_address_1, :shipping_address_2, :shipping_company, :shipping_city, :shipping_state, :shipping_postal_code, :shipping_country, :shipping_email, :shipping_carrier, :tracking_number, :shipping_date, :shipping, :cc_number, :cc_exp, :cc_issue_number, :check_account, :check_aba, :check_name, :account_holder_type, :account_type, :sec_code, :processor_id, :cc_bin, :cc_start_date] + 20.times.collect { |i| :"merchant_defined_field_#{i+1}" }
+    MERCHANT_DEFINED_FIELDS = 20.times.collect { |i| :"merchant_defined_field_#{i+1}" }
+    WHITELIST_ATTRIBUTES = [:id, :first_name, :last_name, :address_1, :address_2, :company, :city, :state, :postal_code, :country, :email, :phone, :fax, :cell_phone, :customertaxid, :website, :shipping_first_name, :shipping_last_name, :shipping_address_1, :shipping_address_2, :shipping_company, :shipping_city, :shipping_state, :shipping_postal_code, :shipping_country, :shipping_email, :shipping_carrier, :tracking_number, :shipping_date, :shipping, :cc_number, :cc_exp, :cc_issue_number, :check_account, :check_aba, :check_name, :account_holder_type, :account_type, :sec_code, :processor_id, :cc_bin, :cc_start_date] + MERCHANT_DEFINED_FIELDS
     attr_accessor_with_tracking_of_changes *WHITELIST_ATTRIBUTES
 
     validate :billing_information_present?, :if => Proc.new { |record| :add_customer == record.customer_vault }
@@ -105,6 +106,19 @@ module NmiDirectPost
 
     def checking?
       !@check_hash.blank?
+    end
+
+    def find!
+      begin
+        @report_type = :customer_vault
+        safe_params = generate_query_string(MERCHANT_DEFINED_FIELDS + [:last_name, :email, :report_type]) # These are the only fields you can use when looking up without a customer_vault_id
+        logger.info { "Querying NMI customer vault: #{safe_params}" }
+        @customer_vault_id = self.class.get(self.class.all_params(safe_params))['customer_vault'][0]['customer_vault_id'] # This assumes there is only 1 result.
+        # TODO: When there are multiple results, we don't know which one you want.  Maybe raise an error in that case?
+        reload
+      ensure
+        @report_type = nil
+      end
     end
 
     class << self
