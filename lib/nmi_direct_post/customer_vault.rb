@@ -187,13 +187,16 @@ module NmiDirectPost
         attributes = attributes.with_indifferent_access
         @attributes_to_update = []
         merchant_defined_fields = []
+        if attributes.key?(:merchant_defined_field) && attributes[:merchant_defined_field].is_a?(String)
+          self.merchant_defined_field_1 = attributes.delete(:merchant_defined_field)
+        end
         WHITELIST_ATTRIBUTES.each do |a|
           if attributes.key?(a)
             val = attributes.delete(a)
             @attributes_to_update << a
           end
           merchant_defined_field_index = a.to_s.split('merchant_defined_field_')[1]
-          if (!merchant_defined_field_index.nil? && val.nil? && attributes.key?(:merchant_defined_field))
+          if (!merchant_defined_field_index.nil? && val.nil? && attributes.key?(:merchant_defined_field) && attributes[:merchant_defined_field].is_a?(Array))
             index = merchant_defined_field_index.to_i - 1
             if attributes[:merchant_defined_field].size > index
               val = attributes[:merchant_defined_field][index]
