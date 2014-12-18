@@ -1,5 +1,6 @@
 require 'active_model/serialization'
 require 'active_model/serializers/xml'
+require 'active_support/core_ext/hash/indifferent_access'
 require_relative 'base'
 
 module NmiDirectPost
@@ -13,7 +14,6 @@ module NmiDirectPost
 
   class CustomerVault < Base
     private
-      NIL = "DYkMd6Nu1r3wpNNkDw8CMbpydEhohJYX3TluvhSsqFjDqvr34a4k2BL4pBY8"
       def self.attr_accessor_with_tracking_of_changes(*list)
         list.each do |attr|
           attr_reader attr
@@ -86,12 +86,14 @@ module NmiDirectPost
         logger.debug { "Loading NMI customer vault from customer_vault_id(#{customer_vault_id}) using query: #{safe_params}" }
         response = self.class.get(self.class.all_params(safe_params))["customer_vault"]
         raise CustomerVaultNotFoundError, "No record found for customer vault ID #{self.customer_vault_id}" if response.nil?
-        attributes = response["customer"]
+        attributes = response["customer"].with_indifferent_access
         READ_ONLY_ATTRIBUTES.each do |a|
-          val = (attributes.delete(a.to_s) { NIL })
-          instance_variable_set("@#{a}",val) unless NIL == val
+          if attributes.key?(a)
+            val = attributes.delete(a)
+            instance_variable_set("@#{a}",val)
+          end
         end
-        set_attributes(attributes.tap { |_| _.delete("customer_vault_id") })
+        set_attributes(attributes.tap { |_| _.delete(:customer_vault_id) })
       ensure
         @report_type = nil
         @attributes_to_update = nil
@@ -182,25 +184,26 @@ module NmiDirectPost
       end
 
       def set_attributes(attributes)
+        attributes = attributes.with_indifferent_access
         @attributes_to_update = []
         merchant_defined_fields = []
         WHITELIST_ATTRIBUTES.each do |a|
-          val = (attributes.delete(a.to_s) { NIL })
-          val = (attributes.delete(a) { NIL }) if NIL == val
-          merchant_defined_field_index = a.to_s.split('merchant_defined_field_')[1]
-          if (!merchant_defined_field_index.nil? && NIL == val && attributes.key?('merchant_defined_field'))
-            val = attributes['merchant_defined_field'][merchant_defined_field_index.to_i - 1] || NIL
-            merchant_defined_fields << (merchant_defined_field_index.to_i - 1) unless NIL == val
-          end
-          unless NIL == val
-            self.__send__("#{a}=", val)
+          if attributes.key?(a)
+            val = attributes.delete(a)
             @attributes_to_update << a
           end
+          merchant_defined_field_index = a.to_s.split('merchant_defined_field_')[1]
+          if (!merchant_defined_field_index.nil? && val.nil? && attributes.key?(:merchant_defined_field))
+            index = merchant_defined_field_index.to_i - 1
+            if attributes[:merchant_defined_field].size > index
+              val = attributes[:merchant_defined_field][index]
+              attributes[:merchant_defined_field][index] = nil
+              @attributes_to_update << a
+            end
+          end
+          self.__send__("#{a}=", val) if @attributes_to_update.include?(a)
         end
-        merchant_defined_fields.each do |i|
-          attributes['merchant_defined_field'][i] = nil
-          attributes.delete('merchant_defined_field') if [nil] == attributes['merchant_defined_field'].uniq
-        end
+        attributes.delete(:merchant_defined_field) unless attributes.key?(:merchant_defined_field) && attributes[:merchant_defined_field].any?
         @id = @id.to_i if @id
         raise MassAssignmentSecurity::Error, "Cannot mass-assign the following attributes: #{attributes.keys.join(", ")}" unless attributes.empty?
       end
