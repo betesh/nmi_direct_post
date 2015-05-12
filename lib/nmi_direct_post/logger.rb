@@ -1,3 +1,5 @@
+require "logger"
+
 module NmiDirectPost
   class << self
     def logger
