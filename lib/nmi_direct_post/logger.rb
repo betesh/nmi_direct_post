@@ -3,7 +3,7 @@ require "logger"
 module NmiDirectPost
   class << self
     def logger
-      @logger ||= defined?(::Rails) ? Rails.logger : ::Logger.new(STDOUT)
+      @logger ||= defined?(::Rails.logger) ? Rails.logger : ::Logger.new(STDOUT)
     end
     def logger=(_)
       raise ArgumentError, "NmiDirectPost logger must respond to :info and :debug" unless logger_responds(_)

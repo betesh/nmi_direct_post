@@ -18,6 +18,17 @@ module NmiDirectPost
   end
 end
 
+module RailsWithLogger
+  class << self
+    def logger
+      @logger = Logger.new('/tmp/rails_logger')
+    end
+  end
+end
+
+module RailsWithoutLogger
+end
+
 describe NmiDirectPost do
   describe "logger" do
     before(:each) do
@@ -31,21 +42,27 @@ describe NmiDirectPost do
       expect(NmiDirectPost.logger.instance_variable_get("@logdev").instance_variable_get("@dev")).to eq(STDOUT)
     end
 
-    describe "Rails is defined" do
-      before(:all) do
-        module Rails
-          class << self
-            def logger
-              @logger = Logger.new('/tmp/rails_logger')
-            end
-          end
-        end
+    describe "Rails.logger is defined" do
+      before(:each) do
+        stub_const("::Rails", RailsWithLogger)
       end
-      it "should default to the Rails logger if Rails is defined" do
+
+      it "should default to the Rails logger if Rails.logger is defined" do
         expect(NmiDirectPost.logger.instance_variable_get("@logdev").instance_variable_get("@dev").inspect).to eq(File.new('/tmp/rails_logger').inspect)
       end
-      after(:all) do
+
+      after(:each) do
         `rm /tmp/rails_logger`
+      end
+    end
+
+    describe "Rails is defined but Rails.logger is not" do
+      before(:each) do
+        stub_const("::Rails", RailsWithoutLogger)
+      end
+
+      it "should default to a STDOUT logger" do
+        expect(NmiDirectPost.logger.instance_variable_get("@logdev").instance_variable_get("@dev")).to eq(STDOUT)
       end
     end
 
