@@ -80,7 +80,7 @@ module NmiDirectPost
           url = URI.parse(uri)
           http = Net::HTTP.new(url.host, url.port)
           http.use_ssl = true
-          http.ssl_version = :TLSv1
+          http.ssl_version = :TLSv1_2
           http.verify_mode = OpenSSL::SSL::VERIFY_PEER
           http.request(request)
         end
