@@ -22,6 +22,7 @@ module NmiDirectPost
     validates_numericality_of :amount, :greater_than => 0, :if => :'is_auth?', :message => "%{attribute} cannot be 0 for an authorization"
     validate :voidable_transaction?, :if => :is_void?
     validate :persisted?, :if => :is_void?
+    validate :refundable_transaction?, if: :is_a_refund?
     validate :save_successful?, :unless => 'response_text.blank?'
 
     def initialize(attributes)
@@ -30,15 +31,19 @@ module NmiDirectPost
       @transaction_id = attributes[:transaction_id].to_i if attributes[:transaction_id]
       @customer_vault_id = attributes[:customer_vault_id].to_i if attributes[:customer_vault_id]
       reload if (finding_by_transaction_id? && self.valid?)
-      @type, @amount = attributes[:type].to_s, attributes[:amount].to_f if ['void', 'capture'].include?(attributes[:type].to_s)
+      @type, @amount = attributes[:type].to_s, attributes[:amount].to_f if ['void', 'capture', 'refund'].include?(attributes[:type].to_s)
     end
 
     def save
       return false if invalid?
       if condition.blank?
-        if 'void' == type
+        if ['void', 'refund'].include?(type)
+          _type, _amount = type, amount
           reload
-          @type = 'void'
+          self.errors.add(:amount, "You cannot refund more than the entire transaction amout of #{amount}") if 'refund' == _type && _amount > amount
+          invalid?
+          @type, @amount = _type, _amount
+          return false if !errors.empty?
         end
       end
       _safe_params = safe_params
@@ -79,6 +84,11 @@ module NmiDirectPost
 
     def void!
       @type='void'
+      save
+    end
+
+    def refund!(amount)
+      @type, @amount = 'refund', amount
       save
     end
 
@@ -150,6 +160,10 @@ module NmiDirectPost
         !customer_vault_is_checking? && ('void' == type.to_s)
       end
 
+      def is_a_refund?
+        'refund' == type.to_s
+      end
+
       def save_successful?
         return if (success? || declined?)
         self.errors.add(:response, response.to_s)
@@ -159,6 +173,15 @@ module NmiDirectPost
 
       def voidable_transaction?
         self.errors.add(:type, "Void is only a valid action for a pending or unsettled authorization, or an unsettled sale") if (finding_by_transaction_id? && !['pending', 'pendingsettlement'].include?(condition)) unless condition.blank?
+      end
+
+      def refundable_transaction?
+        return if condition.blank? || !finding_by_transaction_id?
+        if !['capture', 'sale'].include?(type)
+          self.errors.add(:type, "Refund is only a valid action for authorizations and sales, not for #{type}")
+        elsif 'complete' != condition
+          self.errors.add(:condition, "Refund is only a valid action for authorization that already were captured and settled, or sales that already settled.  Current condition: #{condition}")
+        end
       end
 
       def persisted?
