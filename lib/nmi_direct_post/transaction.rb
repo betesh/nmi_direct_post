@@ -34,8 +34,13 @@ module NmiDirectPost
     end
 
     def save
-      void! if ('void' == type && condition.blank?)
-      return false if self.invalid?
+      return false if invalid?
+      if condition.blank?
+        if 'void' == type
+          reload
+          @type = 'void'
+        end
+      end
       _safe_params = safe_params
       logger.info { "Sending Direct Post Transaction to NMI: #{_safe_params}" }
       post([_safe_params, transaction_params].join('&'))
@@ -74,11 +79,6 @@ module NmiDirectPost
 
     def void!
       @type='void'
-      if condition.blank?
-        return false if invalid?
-        reload
-        @type = 'void'
-      end
       save
     end
 
