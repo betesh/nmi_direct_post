@@ -230,21 +230,31 @@ describe NmiDirectPost::Transaction do
         expect(cc_auth.errors[:type].size).to eq(1), cc_auth.errors.inspect
         expect(cc_auth.errors[:type]).to include('Void is only a valid action for a transaction that has already been sent to NMI')
       end
+
+      def expect_error_on_void_for(transaction)
+        expect(transaction.errors.size).to eq(1), transaction.errors.inspect
+        expect(transaction.errors[:type].size).to eq(1), transaction.errors.inspect
+        expect(transaction.errors[:type]).to include('Void is only a valid action for a pending or unsettled authorization, or an unsettled sale')
+      end
+
       it "should not be allowed for a voided sale" do
         cc_implicit_sale.save!
         expect(cc_implicit_sale.void!).to eq(true)
         expect(cc_implicit_sale.void!).to eq(false)
-        expect(cc_implicit_sale.errors.size).to eq(1), cc_implicit_sale.errors.inspect
-        expect(cc_implicit_sale.errors[:type].size).to eq(1), cc_implicit_sale.errors.inspect
-        expect(cc_implicit_sale.errors[:type]).to include('Void is only a valid action for a pending or unsettled authorization, or an unsettled sale')
+        expect_error_on_void_for(cc_implicit_sale)
+        void = NmiDirectPost::Transaction.new(transaction_id: cc_implicit_sale.transaction_id, type: :void)
+        expect(void.save).to eq(false)
+        expect_error_on_void_for(void)
       end
       it "should not be allowed for a voided auth" do
         cc_auth.save!
         expect(cc_auth.void!).to eq(true)
         expect(cc_auth.void!).to eq(false)
-        expect(cc_auth.errors.size).to eq(1), cc_auth.errors.inspect
-        expect(cc_auth.errors[:type].size).to eq(1), cc_auth.errors.inspect
-        expect(cc_auth.errors[:type]).to include('Void is only a valid action for a pending or unsettled authorization, or an unsettled sale')
+        expect_error_on_void_for(cc_auth)
+
+        void = NmiDirectPost::Transaction.new(transaction_id: cc_auth.transaction_id, type: :void)
+        expect(void.save).to eq(false)
+        expect_error_on_void_for(void)
       end
     end
   end
