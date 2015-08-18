@@ -268,6 +268,10 @@ describe NmiDirectPost::Transaction do
         expect(cc_implicit_sale.errors[:condition].size).to eq(1), cc_implicit_sale.errors.inspect
         expect(cc_implicit_sale.errors[:condition]).to include("Refund is only a valid action for authorization that already were captured and settled, or sales that already settled.  Current condition: pendingsettlement")
       end
+      it "should be allowed for a pending sale" do
+        cc_implicit_sale.save!
+        expect(cc_implicit_sale.refund!(refund_amount)).to eq(true)
+      end
       it "should not be allowed for validates" do
         cc_validation.save!
         expect(cc_validation.refund!(refund_amount)).to eq(false)
@@ -286,6 +290,24 @@ describe NmiDirectPost::Transaction do
         refund = NmiDirectPost::Transaction.new(transaction_id: cc_auth.transaction_id, type: :refund, amount: refund_amount)
         expect(refund.save).to eq(true), cc_auth.errors.inspect
         expect(refund.errors).to be_empty, cc_auth.errors.inspect
+        expect(cc_validation.errors[:type]).to include('Void is only a valid action for a pending or unsettled authorization, or an unsettled sale')
+      end
+      it "should be allowed for authorizations when saved and voided on same instantiation" do
+        expect(cc_auth.save).to eq(true), cc_auth.inspect
+        expect(cc_auth.refund!(refund_amount)).to eq(true), cc_auth.inspect
+        expect(cc_auth.errors).to be_empty, cc_auth.errors.inspect
+      end
+      it "should be allowed for authorizations when found by transaction ID" do
+        cc_auth.save!
+        void = NmiDirectPost::Transaction.find_by_transaction_id(cc_auth.transaction_id)
+        expect(void.refund!(refund_amount)).to eq(true), void.inspect
+        expect(void.errors).to be_empty, void.errors.inspect
+      end
+      it "should be allowed for authorizations when instantiated as a void" do
+        cc_auth.save!
+        void = NmiDirectPost::Transaction.new(transaction_id: cc_auth.transaction_id, type: :void)
+        expect(void.save).to eq(true), cc_auth.errors.inspect
+        expect(void.errors).to be_empty, cc_auth.errors.inspect
       end
       it "should not be allowed for an unpersisted transaction" do
         expect(cc_auth.refund!(refund_amount)).to eq(false), cc_auth.inspect

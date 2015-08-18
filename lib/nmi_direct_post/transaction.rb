@@ -88,7 +88,7 @@ module NmiDirectPost
     end
 
     def refund!(amount)
-      @type, @amount = 'refund', amount
+      set_refund_params(amount)
       save
     end
 
@@ -102,6 +102,11 @@ module NmiDirectPost
     end
 
     private
+      def set_refund_params(amount)
+        @type, @amount = 'refund', amount
+        raise StandardError, "You cannot refund more than the entire transaction" if amount > self.amount unless condition.blank?
+      end
+
       def safe_params
         generate_query_string(SAFE_PARAMS)
       end
