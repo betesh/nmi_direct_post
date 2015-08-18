@@ -207,6 +207,10 @@ module NmiDirectPost
           self.__send__("#{a}=", val) if @attributes_to_update.include?(a)
         end
         attributes.delete(:merchant_defined_field) unless attributes.key?(:merchant_defined_field) && attributes[:merchant_defined_field].any?
+        merchant_defined_fields.each do |i|
+          attributes['merchant_defined_field'][i] = nil
+          attributes.delete('merchant_defined_field') if [nil] == attributes['merchant_defined_field'].uniq
+        end
         @id = @id.to_i if @id
         raise MassAssignmentSecurity::Error, "Cannot mass-assign the following attributes: #{attributes.keys.join(", ")}" unless attributes.empty?
       end
