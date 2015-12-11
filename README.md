@@ -22,17 +22,21 @@ Or install it yourself as:
 
 ## Usage
 
-1) Before you can query or post, establish the connection:
+1) Before you query or post, you probably want to set a default username and password:
 
     NmiDirectPost::Base.establish_connection("MY_NMI_USERNAME", "MY_NMI_PASSWORD")
+
+If you don't set a default, you'll need to include the username and password in the hash passed to the initializer when instantiating a new Transaction or CustomerVault.
 
 Theoretically, you can use a different connection for NmiDirectPost::Transaction or NmiDirectPost::CustomerVault by calling establish_connection on either of those derived classes, instead of on Base.
 However, it's hard to imagine a case where this would be useful; the option is only present to mimic the syntax of ActiveRecord.
 
 2) Query the API:
 
-    NmiDirectPost::Transaction.find_by_transaction_id(123456789)
-    NmiDirectPost::CustomerVault.find_by_customer_vault_id(123123123)
+    NmiDirectPost::Transaction.find_by_transaction_id(123456789, "MyUsername", "MyPassword")
+    NmiDirectPost::Transaction.find_by_transaction_id(123456789) # If you've already called establish_connection
+
+    NmiDirectPost::CustomerVault.find_by_customer_vault_id(123123123) # Note that there is no way to pass a username and password to this method.  You must call establish_connection beforehand.
 
 3) Create a CustomerVault:
 
@@ -68,6 +72,8 @@ However, it's hard to imagine a case where this would be useful; the option is o
     NmiDirectPost::CustomerVault.first
     NmiDirectPost::CustomerVault.last
     NmiDirectPost::CustomerVault.all # Returns very, very big array.  This method had very poor performance and could be optimized significantly in a future version of this gem.
+
+    Note that there is no way to pass a username and password to these methods.  You must call establish_connection beforehand.
 
 8) Create a Transaction:
 
