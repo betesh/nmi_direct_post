@@ -25,6 +25,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "simplecov"
 
   spec.add_dependency 'addressable'
-  spec.add_dependency 'activemodel'
-  spec.add_dependency 'activesupport', ' >= 3.0'
+  spec.add_dependency 'activemodel', '>= 4.0'
 end
