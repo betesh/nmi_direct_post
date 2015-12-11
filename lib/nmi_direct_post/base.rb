@@ -28,8 +28,9 @@ module NmiDirectPost
     include ActiveModel::Conversion
     validates_presence_of :username, :password
 
-    def initialize
-      @username, @password = self.class.username, self.class.password
+    def initialize(attributes)
+      @username = attributes[:username] || attributes["username"] || self.class.username
+      @password = attributes[:password] || attributes["password"] || self.class.password
     end
 
     def persisted?

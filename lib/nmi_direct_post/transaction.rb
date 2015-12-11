@@ -25,7 +25,7 @@ module NmiDirectPost
     validate :save_successful?, :unless => 'response_text.blank?'
 
     def initialize(attributes)
-      super()
+      super
       @type, @amount = attributes[:type].to_s, attributes[:amount].to_f
       @transaction_id = attributes[:transaction_id].to_i if attributes[:transaction_id]
       @customer_vault_id = attributes[:customer_vault_id].to_i if attributes[:customer_vault_id]

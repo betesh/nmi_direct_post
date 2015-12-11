@@ -34,4 +34,8 @@ describe NmiDirectPost::Base do
     NmiDirectPost::CustomerVault.establish_connection(credentials.nmi_username, credentials.nmi_password)
     expect{a_query}.to_not raise_error
   end
+  it "should allow the record to set its own username/password" do
+    a_query = ->{ NmiDirectPost::CustomerVault.find_by_customer_vault_id(a_cc_customer_vault_id, "ABC", "DEF") }
+    expect(a_query).not_to raise_error
+  end
 end

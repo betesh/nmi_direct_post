@@ -39,7 +39,7 @@ module NmiDirectPost
         :if => Proc.new { |record| :add_customer == record.customer_vault }
 
     def initialize(attributes)
-      super()
+      super
       if attributes[:customer_vault_id].blank?
         set_attributes(attributes.dup) unless attributes.empty?
       else
@@ -84,7 +84,7 @@ module NmiDirectPost
       begin
         safe_params = customer_vault_instance_params
         logger.debug { "Loading NMI customer vault from customer_vault_id(#{customer_vault_id}) using query: #{safe_params}" }
-        response = self.class.get(self.class.all_params(safe_params))["customer_vault"]
+        response = self.class.get(self.class.all_params(safe_params, self))["customer_vault"]
         raise CustomerVaultNotFoundError, "No record found for customer vault ID #{self.customer_vault_id}" if response.nil?
         attributes = response["customer"].with_indifferent_access
         READ_ONLY_ATTRIBUTES.each do |a|
@@ -115,7 +115,7 @@ module NmiDirectPost
         @report_type = :customer_vault
         safe_params = generate_query_string(MERCHANT_DEFINED_FIELDS + [:last_name, :email, :report_type]) # These are the only fields you can use when looking up without a customer_vault_id
         logger.info { "Querying NMI customer vault: #{safe_params}" }
-        @customer_vault_id = self.class.get(self.class.all_params(safe_params))['customer_vault'][0]['customer_vault_id'] # This assumes there is only 1 result.
+        @customer_vault_id = self.class.get(self.class.all_params(safe_params, self))['customer_vault'][0]['customer_vault_id'] # This assumes there is only 1 result.
         # TODO: When there are multiple results, we don't know which one you want.  Maybe raise an error in that case?
         reload
       ensure
@@ -126,10 +126,10 @@ module NmiDirectPost
     class << self
       attr_reader :report_type
 
-      def find_by_customer_vault_id(customer_vault_id)
+      def find_by_customer_vault_id(customer_vault_id, username=nil, password=nil)
         raise StandardError, "CustomerVaultID cannot be blank" if customer_vault_id.blank?
         begin
-          new(:customer_vault_id => customer_vault_id)
+          new(customer_vault_id: customer_vault_id, username: username, password: password)
         rescue CustomerVaultNotFoundError
           return nil
         end
@@ -161,8 +161,8 @@ module NmiDirectPost
         limit
       end
 
-      def all_params(safe_params)
-        [safe_params, generate_query_string(Base::AUTH_PARAMS)].join('&')
+      def all_params(safe_params, target=self)
+        [safe_params, generate_query_string(Base::AUTH_PARAMS, target)].join('&')
       end
 
       private
@@ -178,7 +178,7 @@ module NmiDirectPost
 
       def post(safe_params)
         logger.info { "Sending Direct Post to NMI: #{safe_params}" }
-        response = self.class.post(self.class.all_params(safe_params))
+        response = self.class.post(self.class.all_params(safe_params, self))
         @response, @response_text, @response_code = response["response"].to_i, response["responsetext"], response["response_code"].to_i
         @customer_vault_id = response["customer_vault_id"].to_i if :add_customer == self.customer_vault
       end
