@@ -51,11 +51,11 @@ module NmiDirectPost
       save || raise(TransactionNotSavedError)
     end
 
-    def self.find_by_transaction_id(transaction_id)
+    def self.find_by_transaction_id(transaction_id, username=nil, password=nil)
       raise StandardError, "TransactionID cannot be blank" if transaction_id.blank?
       NmiDirectPost.logger.debug { "Looking up NMI transaction by transaction_id(#{transaction_id})" }
       begin
-        new(:transaction_id => transaction_id)
+        new(:transaction_id => transaction_id, username: username, password: password)
       rescue TransactionNotFoundError
         return nil
       end
