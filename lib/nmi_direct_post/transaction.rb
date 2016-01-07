@@ -26,6 +26,8 @@ module NmiDirectPost
 
     def initialize(attributes)
       super
+      @username = attributes[:username] if attributes[:username]
+      @password = attributes[:password] if attributes[:password]
       @type, @amount = attributes[:type].to_s, attributes[:amount].to_f
       @transaction_id = attributes[:transaction_id].to_i if attributes[:transaction_id]
       @customer_vault_id = attributes[:customer_vault_id].to_i if attributes[:customer_vault_id]
@@ -83,7 +85,7 @@ module NmiDirectPost
     end
 
     def customer_vault
-      @customer_vault ||= CustomerVault.find_by_customer_vault_id(@customer_vault_id) unless @customer_vault_id.blank?
+      @customer_vault ||= CustomerVault.find_by_customer_vault_id(@customer_vault_id, @username, @password) unless @customer_vault_id.blank?
     end
 
     def reload
