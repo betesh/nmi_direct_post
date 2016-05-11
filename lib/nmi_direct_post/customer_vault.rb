@@ -29,7 +29,7 @@ module NmiDirectPost
     attr_reader :customer_vault_id, :customer_vault, :report_type
 
     MERCHANT_DEFINED_FIELDS ||= 20.times.collect { |i| :"merchant_defined_field_#{i+1}" }
-    WHITELIST_ATTRIBUTES ||= [:id, :first_name, :last_name, :address_1, :address_2, :company, :city, :state, :postal_code, :country, :email, :phone, :fax, :cell_phone, :customertaxid, :website, :shipping_first_name, :shipping_last_name, :shipping_address_1, :shipping_address_2, :shipping_company, :shipping_city, :shipping_state, :shipping_postal_code, :shipping_country, :shipping_email, :shipping_carrier, :tracking_number, :shipping_date, :shipping, :cc_number, :cc_exp, :cc_issue_number, :check_account, :check_aba, :check_name, :account_holder_type, :account_type, :sec_code, :processor_id, :cc_bin, :cc_start_date] + MERCHANT_DEFINED_FIELDS
+    WHITELIST_ATTRIBUTES ||= [:username, :password, :id, :first_name, :last_name, :address_1, :address_2, :company, :city, :state, :postal_code, :country, :email, :phone, :fax, :cell_phone, :customertaxid, :website, :shipping_first_name, :shipping_last_name, :shipping_address_1, :shipping_address_2, :shipping_company, :shipping_city, :shipping_state, :shipping_postal_code, :shipping_country, :shipping_email, :shipping_carrier, :tracking_number, :shipping_date, :shipping, :cc_number, :cc_exp, :cc_issue_number, :check_account, :check_aba, :check_name, :account_holder_type, :account_type, :sec_code, :processor_id, :cc_bin, :cc_start_date] + MERCHANT_DEFINED_FIELDS
     attr_accessor_with_tracking_of_changes *WHITELIST_ATTRIBUTES
 
     validate :billing_information_present?, :if => Proc.new { |record| :add_customer == record.customer_vault }
